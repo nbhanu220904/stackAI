@@ -1,5 +1,5 @@
 import React from "react";
-import devAvatar from "../assets/image-avatar.jpg"; // Adjust path if needed
+import devAvatar from "../assets/img-avatar.jpg"; // Adjust path if needed
 
 const DeveloperAvatar = () => {
   return (

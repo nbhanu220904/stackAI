@@ -15,7 +15,7 @@ const Hero = () => {
     <div className="relative px-4 sm:px-20 xl:px-32 w-full min-h-screen flex flex-col justify-center">
       {/* Background image layer */}
       <div
-        className="absolute inset-0 bg-cover bg-no-repeat bg-center opacity-70 z-0"
+        className="absolute inset-0 bg-cover bg-no-repeat bg-center opacity-67 z-0"
         style={{ backgroundImage: `url(${gradientBg})` }}
       ></div>
 
