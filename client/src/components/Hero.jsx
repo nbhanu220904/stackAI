@@ -56,7 +56,7 @@ const Hero = () => {
         </div>
 
         {/* Developer Image */}
-
+            
         <DeveloperAvatar />
 
         {/* End of Developer Avatar */}

@@ -11,7 +11,7 @@ const NavBar = () => {
   const { openSignIn } = useClerk();
 
   return (
-    <div className="flex justify-between items-center fixed z-5 w-full backdrop-blur-15xl py-3 px-4 sm:px-20 xl:px-32 bg-white/20">
+    <div className="flex justify-between items-center fixed z-5 w-full backdrop-blur-8xl shadow-sm py-3 px-4 sm:px-20 xl:px-32 bg-white/20">
       <h1
         className="text-2xl font-bold cursor-pointer"
         onClick={() => {
