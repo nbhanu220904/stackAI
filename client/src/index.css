@@ -8,3 +8,13 @@
 html {
   scroll-behavior: smooth;
 }
+
+.reset-tw,
+.reset-tw * {
+  all: revert !important;
+}
+
+.cl-drawerRoot {
+  /* position: fixed; */
+  z-index: 10;
+}
