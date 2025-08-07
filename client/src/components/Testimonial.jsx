@@ -1,5 +1,5 @@
 import React from "react";
-// import gradientBg from "../assets/v960-ning-05.jpg";
+import developerImage from "../assets/image-avatar.jpg";
 
 const Testimonial = () => {
   <style>{`
@@ -28,60 +28,63 @@ const Testimonial = () => {
         <div className="max-w-80 bg-black text-white rounded-2xl">
           <div className="relative -mt-px overflow-hidden rounded-2xl">
             <img
-              src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=600"
+              src={developerImage}
               alt=""
-              className="h-[270px] w-full rounded-2xl hover:scale-105 transition-all duration-300 object-cover object-top"
+              className="h-[330px] w-full rounded-2xl hover:scale-105 transition-all duration-300 object-cover object-top"
             />
             <div className="absolute bottom-0 z-10 h-60 w-full bg-gradient-to-t pointer-events-none from-black to-transparent"></div>
           </div>
           <div className="px-4 pb-4">
             <p className="font-medium border-b border-gray-600 pb-5">
-              “Radiant made undercutting all of our competitors an absolute
-              breeze.”
+              “I’ve tried dozens of tools, but StackAI is the first that truly
+              understands the needs of creators like me — intuitive, fast, and
+              delightfully powerful.”
             </p>
-            <p className="mt-4">— John Doe</p>
+            <p className="mt-4">— N Bhanu Durga Prasad</p>
             <p className="text-sm font-medium bg-gradient-to-r from-[#8B5CF6] via-[#E0724A] to-[#9938CA] text-transparent bg-clip-text">
-              Content Marketing
+              Full Stack Developer
             </p>
           </div>
         </div>
         <div className="max-w-80 bg-black text-white rounded-2xl">
           <div className="relative -mt-px overflow-hidden rounded-2xl">
             <img
-              src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=600"
+              src={developerImage}
               alt=""
-              className="h-[270px] w-full rounded-2xl hover:scale-105 transition-all duration-300 object-cover object-top"
+              className="h-[330px] w-full rounded-2xl hover:scale-105 transition-all duration-300 object-cover object-top"
             />
             <div className="absolute bottom-0 z-10 h-60 w-full bg-gradient-to-t pointer-events-none from-black to-transparent"></div>
           </div>
           <div className="px-4 pb-4">
             <p className="font-medium border-b border-gray-600 pb-5">
-              “Radiant made undercutting all of our competitors an absolute
-              breeze.”
+              “I’ve tried dozens of tools, but StackAI is the first that truly
+              understands the needs of creators like me — intuitive, fast, and
+              delightfully powerful.”
             </p>
-            <p className="mt-4">— John Doe</p>
+            <p className="mt-4">— N Bhanu Durga Prasad</p>
             <p className="text-sm font-medium bg-gradient-to-r from-[#8B5CF6] via-[#E0724A] to-[#9938CA] text-transparent bg-clip-text">
-              Content Marketing
+              Full Stack Developer
             </p>
           </div>
         </div>
         <div className="max-w-80 bg-black text-white rounded-2xl">
           <div className="relative -mt-px overflow-hidden rounded-2xl">
             <img
-              src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=600&h=600&auto=format&fit=crop"
+              src={developerImage}
               alt=""
-              className="h-[270px] w-full rounded-2xl hover:scale-105 transition-all duration-300 object-cover object-top"
+              className="h-[330px] w-full rounded-2xl hover:scale-105 transition-all duration-300 object-cover object-top"
             />
             <div className="absolute bottom-0 z-10 h-60 w-full bg-gradient-to-t pointer-events-none from-black to-transparent"></div>
           </div>
           <div className="px-4 pb-4">
             <p className="font-medium border-b border-gray-600 pb-5">
-              “Radiant made undercutting all of our competitors an absolute
-              breeze.”
+              “I’ve tried dozens of tools, but StackAI is the first that truly
+              understands the needs of creators like me — intuitive, fast, and
+              delightfully powerful.”
             </p>
-            <p className="mt-4">— John Doe</p>
+            <p className="mt-4">— N Bhanu Durga Prasad</p>
             <p className="text-sm font-medium bg-gradient-to-r from-[#8B5CF6] via-[#E0724A] to-[#9938CA] text-transparent bg-clip-text">
-              Content Marketing
+              Full Stack Developer
             </p>
           </div>
         </div>
