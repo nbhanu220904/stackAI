@@ -1,3 +1,5 @@
+import { Linkedin, Github } from "lucide-react";
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -39,7 +41,7 @@ const Footer = () => {
                 />
               </svg>
             </a> */}
-            <a href="#">
+            {/* <a href="#">
               <svg
                 width="20"
                 height="20"
@@ -72,6 +74,27 @@ const Footer = () => {
                   strokeLinejoin="round"
                 />
               </svg>
+            </a> */}
+            <a
+              href="https://www.linkedin.com/in/nomula-bhanu-durga-prasad/"
+              target="_blank"
+              //   rel="noopener noreferrer"
+            >
+              <Linkedin
+                size={20}
+                className="text-blue-600 hover:text-blue-800 transition-colors"
+              />
+            </a>
+
+            <a
+              href="https://www.github.com/nbhanu220904/"
+              target="_blank"
+              //   rel="noopener noreferrer"
+            >
+              <Github
+                size={20}
+                className="text-blue-600 hover:text-blue-800 transition-colors"
+              />
             </a>
           </div>
         </div>
@@ -114,7 +137,7 @@ const Footer = () => {
         </div>
       </div>
       <p className="py-4 text-center text-xs md:text-sm text-gray-500">
-        Copyright 2024 © <a href="#">StackAI</a>. All Right Reserved.
+        Copyright 2025 © <a href="#">StackAI</a>. All Right Reserved.
       </p>
     </footer>
   );
