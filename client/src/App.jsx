@@ -11,8 +11,19 @@ import RemoveBackground from "./pages/RemoveBackground";
 import RemoveObject from "./pages/RemoveObject";
 import ResumeCreator from "./pages/ResumeCreator";
 import ReviewResume from "./pages/ReviewResume";
+import { useAuth } from "@clerk/clerk-react";
+import { useEffect } from "react";
 
 const App = () => {
+  const { getToken } = useAuth();
+  useEffect(() => {
+    getToken().then((token) => {
+      console.log("====================================");
+      console.log(token);
+      console.log("====================================");
+    });
+  }, []);
+
   return (
     <div>
       <Routes>
