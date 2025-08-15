@@ -1,5 +1,11 @@
 import { EditIcon, HashIcon, SparklesIcon } from "lucide-react";
 import React, { useState } from "react";
+import axios from "axios";
+import { useAuth } from "@clerk/clerk-react";
+import toast from "react-hot-toast";
+import Markdown from "react-markdown";
+
+axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
 
 const BlogTitles = () => {
   const blogCategories = [
@@ -14,8 +20,36 @@ const BlogTitles = () => {
   ];
   const [selectedCategory, setSelectedCategory] = useState("General");
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [content, setContent] = useState("");
+
+  const { getToken } = useAuth();
+
   const onSubmitHandler = async (event) => {
     event.preventDefault();
+    try {
+      setLoading(true);
+      const prompt = `Generate a list of blog titles for the category ${selectedCategory} based on the keyword ${input}.`;
+      const { data } = await axios.post(
+        "/api/ai/generate-blog-title",
+        { prompt },
+        {
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+          },
+        }
+      );
+      if (data.success) {
+        setContent(data.content);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -56,8 +90,15 @@ const BlogTitles = () => {
         </div>
         <br />
 
-        <button className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-[#004e92] to-[#0d1452] text-white px-4 py-2 mt-6 text-sm rounded-lg cursor-pointer">
-          <HashIcon className="w-5" />
+        <button
+          disabled={loading}
+          className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-[#004e92] to-[#0d1452] text-white px-4 py-2 mt-6 text-sm rounded-lg cursor-pointer"
+        >
+          {loading ? (
+            <span className="w-4 h-4 my-1 rounded-full border-2 border-t-transparent animate-spin"></span>
+          ) : (
+            <HashIcon className="w-5" />
+          )}
           Generate Title
         </button>
       </form>
@@ -67,15 +108,23 @@ const BlogTitles = () => {
           <HashIcon className="w-5 h-5 text-[#004e92]" />
           <h1 className="text-xl font-semibold">Generated Titles</h1>
         </div>
-        <div className="flex-1 flex justify-center items-center">
-          <div className="text-sm flex flex-col items-center gap-5 text-gray-400">
-            <HashIcon className="w-9 h-9" />
-            <p>
-              Kickstart your creativity – enter a topic and click 'Generate
-              Title' to spark compelling ideas.
-            </p>
+        {!content ? (
+          <div className="flex-1 flex justify-center items-center">
+            <div className="text-sm flex flex-col items-center gap-5 text-gray-400">
+              <HashIcon className="w-9 h-9" />
+              <p>
+                Kickstart your creativity – enter a topic and click 'Generate
+                Title' to spark compelling ideas.
+              </p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="mt-3 h-full overflow-y-scroll text-sm text-slate-600">
+            <div className="reset-tw">
+              <Markdown>{content}</Markdown>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
