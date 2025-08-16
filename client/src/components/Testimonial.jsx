@@ -36,7 +36,7 @@ const Testimonial = () => {
           </div>
           <div className="px-4 pb-4">
             <p className="font-medium border-b border-gray-600 pb-5">
-              “I’ve tried dozens of tools, but StackAI is the first that truly
+              “I’ve tried many of tools, but StackAI is the first that truly
               understands the needs of creators like me — intuitive, fast, and
               delightfully powerful.”
             </p>
@@ -46,7 +46,7 @@ const Testimonial = () => {
             </p>
           </div>
         </div>
-        <div className="max-w-80 bg-black text-white rounded-2xl">
+        {/* <div className="max-w-80 bg-black text-white rounded-2xl">
           <div className="relative -mt-px overflow-hidden rounded-2xl">
             <img
               src={developerImage}
@@ -66,8 +66,8 @@ const Testimonial = () => {
               Full Stack Developer
             </p>
           </div>
-        </div>
-        <div className="max-w-80 bg-black text-white rounded-2xl">
+        </div> */}
+        {/* <div className="max-w-80 bg-black text-white rounded-2xl">
           <div className="relative -mt-px overflow-hidden rounded-2xl">
             <img
               src={developerImage}
@@ -87,7 +87,7 @@ const Testimonial = () => {
               Full Stack Developer
             </p>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
