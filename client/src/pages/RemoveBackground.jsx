@@ -1,4 +1,4 @@
-/* eslint-disable no-unused-vars */
+// /* eslint-disable no-unused-vars */
 import { EditIcon, HashIcon, LucideEraser, SparklesIcon } from "lucide-react";
 import React, { useState } from "react";
 import axios from "axios";
