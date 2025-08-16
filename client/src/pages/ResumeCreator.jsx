@@ -49,7 +49,7 @@ const ResumeCreator = () => {
       </div>
 
       {/* Main Section */}
-      <div className="flex-1 flex flex-col lg:flex-row items-center justify-between p-10 bg-white">
+      <div className="flex-1 flex flex-col lg:flex-row items-center justify-between p-10 bg-white relative z-0">
         {/* Left Section */}
         <div className="flex-1 flex flex-col items-start gap-6 max-w-xl">
           <p className="uppercase tracking-wide text-sm text-gray-500">

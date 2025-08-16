@@ -68,7 +68,7 @@ const Community = () => {
   if (!user) return null;
 
   return !loading ? (
-    <div className="flex-1 h-full flex flex-col gap-4 p-6">
+    <div className="flex-1 h-full flex flex-col gap-4 p-6 relative z-0">
       <h2 className="text-xl font-semibold text-gray-800">Creations</h2>
 
       <div className="bg-transparent h-full w-full rounded-xl overflow-y-scroll">
