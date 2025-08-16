@@ -1,22 +1,48 @@
 /* eslint-disable no-unused-vars */
 import { EditIcon, HashIcon, LucideEraser, SparklesIcon } from "lucide-react";
 import React, { useState } from "react";
+import axios from "axios";
+import { useAuth } from "@clerk/clerk-react";
+
+import toast from "react-hot-toast";
+
+axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
 
 const RemoveBackground = () => {
-  //   const blogCategories = [
-  //     "General",
-  //     "Technology",
-  //     "Business",
-  //     "Health",
-  //     "Lifestyle",
-  //     "Education",
-  //     "Travel",
-  //     "Food",
-  //   ];
-  //   const [selectedCategory, setSelectedCategory] = useState("General");
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [content, setContent] = useState("");
+  const { getToken } = useAuth();
   const onSubmitHandler = async (event) => {
     event.preventDefault();
+    try {
+      setLoading(true);
+      const token = await getToken();
+      const formData = new FormData();
+      formData.append("image", input);
+      const { data } = await axios.post(
+        "/api/ai/remove-image-background",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      //   setContent(response.data);
+
+      if (data.success) {
+        setContent(data.content);
+        toast.success("Background removed successfully!");
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -42,26 +68,17 @@ const RemoveBackground = () => {
         <p className="text-xs text-gray-600 mt-2">
           Supports JPG, PNG, and other image formats
         </p>
-        {/* <p className="mt-4 text-sm font-medium">Category</p>
-        <div className="mt-3 flex gap-3 flex-wrap sm:max-w-9/11">
-          {blogCategories.map((item) => (
-            <span
-              onClick={() => setSelectedCategory(item)}
-              key={item}
-              className={`text-xs px-4 py-1 border rounded-full cursor-pointer ${
-                selectedCategory === item
-                  ? "bg-white text-blue-900"
-                  : "text-gray-500 border-gray-300"
-              }`}
-            >
-              {item}
-            </span>
-          ))}
-        </div> */}
         <br />
 
-        <button className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-[#004e92] to-[#0d1452] text-white px-4 py-2 mt-6 text-sm rounded-lg cursor-pointer">
-          <LucideEraser className="w-5" />
+        <button
+          disabled={loading}
+          className="w-full flex justify-center items-center gap-2 bg-gradient-to-r from-[#004e92] to-[#0d1452] text-white px-4 py-2 mt-6 text-sm rounded-lg cursor-pointer"
+        >
+          {loading ? (
+            <span className="w-4 h-4 my-1 rounded-full border-2 border-t-transparent animate-spin"></span>
+          ) : (
+            <LucideEraser className="w-5" />
+          )}
           Remove Background
         </button>
       </form>
@@ -71,16 +88,26 @@ const RemoveBackground = () => {
           <LucideEraser className="w-5 h-5 text-[#004e92]" />
           <h1 className="text-xl font-semibold">Processed Image</h1>
         </div>
-        <div className="flex-1 flex justify-center items-center">
-          <div className="text-sm flex flex-col items-center gap-5 text-gray-400">
-            <LucideEraser className="w-9 h-9" />
-            <p>
-              Effortlessly erase backgrounds – upload your image and click
-              'Remove Background' to get a clean, professional result in
-              seconds.
-            </p>
+        {!content ? (
+          <div className="flex-1 flex justify-center items-center">
+            <div className="text-sm flex flex-col items-center gap-5 text-gray-400">
+              <LucideEraser className="w-9 h-9" />
+              <p>
+                Effortlessly erase backgrounds – upload your image and click
+                'Remove Background' to get a clean, professional result in
+                seconds.
+              </p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex-1 flex justify-center items-center">
+            <img
+              src={content}
+              alt="Processed"
+              className="mt-3 max-w-full max-h-full object-contain"
+            />
+          </div>
+        )}
       </div>
     </div>
   );
