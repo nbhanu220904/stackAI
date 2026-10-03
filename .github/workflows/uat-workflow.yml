@@ -1,0 +1,110 @@
+name: UAT Workflow (Promote DEV to UAT)
+
+"on":
+  schedule:
+    - cron: '0 */4 * * *'      # every 4 hours (UTC)
+  workflow_dispatch:
+    inputs:
+      skip_soak:
+        description: 'Skip the 1-hour soak time check'
+        type: boolean
+        default: false
+
+concurrency:
+  group: uat-workflow
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write               # needed to trigger main-workflow
+  security-events: write
+
+env:
+  SOAK_MINUTES: 60             # DEV change must be at least this old before promotion
+
+jobs:
+  check:
+    name: Is there something to promote?
+    runs-on: ubuntu-latest
+    outputs:
+      should_promote: ${{ steps.c.outputs.should_promote }}
+      dev_sha: ${{ steps.c.outputs.dev_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: c
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SKIP_SOAK: ${{ inputs.skip_soak }}
+        run: |
+          git fetch origin dev uat
+          DEV_SHA=$(git rev-parse origin/dev)
+          echo "dev_sha=$DEV_SHA" >> "$GITHUB_OUTPUT"
+          echo "should_promote=false" >> "$GITHUB_OUTPUT"
+
+          AHEAD=$(git rev-list --count origin/uat..origin/dev)
+          if [ "$AHEAD" -eq 0 ]; then echo "DEV has nothing new for UAT."; exit 0; fi
+
+          AGE=$(( ( $(date +%s) - $(git log -1 --format=%ct origin/dev) ) / 60 ))
+          if [ "$AGE" -lt "$SOAK_MINUTES" ] && [ "$SKIP_SOAK" != "true" ]; then
+            echo "Latest DEV change is ${AGE} min old (< ${SOAK_MINUTES}). Waiting for next run."; exit 0
+          fi
+
+          OK=$(gh run list --workflow dev-workflow.yml --branch dev --commit "$DEV_SHA" --status success --json databaseId --jq length)
+          if [ "$OK" -eq 0 ]; then echo "DEV workflow has not succeeded on $DEV_SHA yet."; exit 0; fi
+
+          echo "$AHEAD commit(s) ready to promote."
+          echo "should_promote=true" >> "$GITHUB_OUTPUT"
+
+  ci:
+    name: CI on DEV snapshot
+    needs: check
+    if: needs.check.outputs.should_promote == 'true'
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ needs.check.outputs.dev_sha }}
+      branch_label: uat
+    secrets: inherit
+
+  promote:
+    name: Merge DEV into UAT
+    needs: [check, ci]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: uat
+          fetch-depth: 0
+          token: ${{ secrets.PROMOTION_TOKEN || github.token }}
+      - name: Merge
+        run: |
+          git config user.name  "accel-cicd-bot"
+          git config user.email "accel-cicd-bot@users.noreply.github.com"
+          git fetch origin dev
+          SHA="${{ needs.check.outputs.dev_sha }}"
+          git merge --ff-only "$SHA" || git merge --no-edit -m "chore: promote dev to uat ($SHA)" "$SHA"
+          git push origin uat
+
+  deploy-uat:
+    name: Deploy to UAT
+    needs: promote
+    runs-on: ubuntu-latest
+    environment: uat
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: uat
+      - name: Deploy
+        run: |
+          echo "Deploying UAT"
+          # TODO: real deploy step
+
+  trigger-main:
+    name: Trigger UAT to MAIN promotion
+    needs: [check, deploy-uat]
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run main-workflow.yml --repo "${{ github.repository }}" --ref main
