@@ -9,7 +9,6 @@ concurrency:
 
 permissions:
   contents: write
-  security-events: write
 
 jobs:
   check:

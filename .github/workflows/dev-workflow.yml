@@ -33,12 +33,11 @@ concurrency:
 
 permissions:
   contents: read
-  security-events: write
   pull-requests: read
 
 jobs:
   ci:
-    name: CI (Tests, SonarQube, Checkmarx)
+    name: CI (Tests, SonarQube)
     uses: ./.github/workflows/ci.yml
     with:
       ref: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || '' }}
