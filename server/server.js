@@ -6,9 +6,12 @@ import connectCloudinary from "./configs/cloudinary.js";
 
 import dotenv from "dotenv";
 import userRouter from "./routes/userRoutes.js";
+import { connectDB } from "./configs/db.js";
 dotenv.config();
 
 const app = express();
+
+connectDB;
 
 await connectCloudinary();
 app.use(cors());
