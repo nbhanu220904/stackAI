@@ -157,6 +157,7 @@ jobs:
           args: >
             -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || 'nbhanu220904_stackAI' }}
             -Dsonar.projectName=stackAI
+            ${{ vars.SONAR_ORGANIZATION && format('-Dsonar.organization={0}', vars.SONAR_ORGANIZATION) || '' }}
             -Dsonar.sources=client/src,server
             -Dsonar.exclusions=**/node_modules/**,**/build/**,**/dist/**,**/coverage/**,**/*.test.js,**/*.test.jsx
             -Dsonar.tests=client/src,server
