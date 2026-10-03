@@ -1,4 +1,4 @@
-name: CI (Reusable) - Build, Pytest, SonarQube, Checkmarx
+name: CI (Reusable) - Build, Pytest, SonarQube
 
 # Shared quality stages used by dev-workflow, uat-workflow and main-workflow.
 "on":
@@ -9,7 +9,7 @@ name: CI (Reusable) - Build, Pytest, SonarQube, Checkmarx
         type: string
         default: ''
       branch_label:
-        description: 'Branch name reported to Checkmarx'
+        description: 'Branch name used for SonarQube branch analysis'
         type: string
         required: true
       sonar_branch_analysis:
@@ -170,34 +170,3 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-
-  checkmarx:
-    name: Checkmarx Security Scan
-    needs: detect
-    if: ${{ secrets.CX_BASE_URI != '' && secrets.CX_TENANT != '' && secrets.CX_CLIENT_ID != '' && secrets.CX_CLIENT_SECRET != '' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-
-      - name: Checkmarx One Scan
-        uses: checkmarx/ast-github-action@main
-        with:
-          project_name: stackAI
-          branch: ${{ inputs.branch_label }}
-          base_uri: ${{ secrets.CX_BASE_URI }}
-          cx_tenant: ${{ secrets.CX_TENANT }}
-          cx_client_id: ${{ secrets.CX_CLIENT_ID }}
-          cx_client_secret_eu: ${{ secrets.CX_CLIENT_SECRET }}
-          additional_params: >-
-            --scan-types sast,sca,iac-security
-            --report-format sarif
-            --output-name cx-results
-            --threshold "sast-high=1;sca-high=1"
-
-      - name: Upload SARIF to GitHub Security tab
-        if: always() && hashFiles('cx-results.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: cx-results.sarif
