@@ -65,7 +65,9 @@ const SideBar = ({ sidebar, setSidebar }) => {
             >
               {({ isActive }) => (
                 <>
-                  <Icon className={`w-4 h-4 ${isActive ? "text-white" : ""}`} />
+                  {React.createElement(Icon, {
+                    className: `w-4 h-4 ${isActive ? "text-white" : ""}`,
+                  })}
                   <span>{label}</span>
                 </>
               )}
