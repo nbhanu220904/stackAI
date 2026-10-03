@@ -179,7 +179,7 @@ jobs:
           [ -f coverage-reports/coverage-server/lcov.info ] && mkdir -p server/coverage && cp coverage-reports/coverage-server/lcov.info server/coverage/lcov.info || true
 
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
@@ -194,13 +194,8 @@ jobs:
             -Dsonar.test.inclusions=**/*.test.js,**/*.test.jsx,**/*.spec.js
             -Dsonar.javascript.lcov.reportPaths=client/coverage/lcov.info,server/coverage/lcov.info
             -Dsonar.branch.name=${{ env.TARGET_REF }}
-
-      - name: SonarQube Quality Gate
-        uses: SonarSource/sonarqube-quality-gate-action@v1
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=300
 
   # ---------------------------------------------------------------------------
   # 5. Checkmarx One security scan (SAST + SCA + IaC)
