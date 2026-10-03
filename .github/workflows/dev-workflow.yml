@@ -185,6 +185,7 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         with:
           args: >
+            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION || 'nbhanu220904' }}
             -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || 'nbhanu220904_stackAI' }}
             -Dsonar.projectName=stackAI
             -Dsonar.sources=client/src,server
