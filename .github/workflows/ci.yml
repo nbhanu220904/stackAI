@@ -163,11 +163,6 @@ jobs:
             -Dsonar.tests=client/src,server
             -Dsonar.test.inclusions=**/*.test.js,**/*.test.jsx,**/*.spec.js
             -Dsonar.javascript.lcov.reportPaths=client/coverage/lcov.info,server/coverage/lcov.info
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=300
             ${{ inputs.sonar_branch_analysis && format('-Dsonar.branch.name={0}', inputs.branch_label) || '' }}
-
-      - name: SonarQube Quality Gate
-        uses: SonarSource/sonarqube-quality-gate-action@v1
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
