@@ -10,7 +10,7 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"No tests specified\"",
+    "test": "node -e \"console.log('No tests specified')\" --",
     "start": "nodemon server.js",
     "dev": "nodemon server.js",
     "server": "nodemon server.js"
