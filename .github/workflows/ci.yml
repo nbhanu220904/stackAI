@@ -1,0 +1,202 @@
+name: CI (Reusable) - Build, Pytest, SonarQube, Checkmarx
+
+# Shared quality stages used by dev-workflow, uat-workflow and main-workflow.
+"on":
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Git ref/SHA to check out (empty = default for the triggering event)'
+        type: string
+        default: ''
+      branch_label:
+        description: 'Branch name reported to Checkmarx'
+        type: string
+        required: true
+      sonar_branch_analysis:
+        description: 'Pass -Dsonar.branch.name (needs SonarQube Developer edition or higher)'
+        type: boolean
+        default: false
+
+env:
+  NODE_VERSION: '20'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  detect:
+    name: Detect project layout
+    runs-on: ubuntu-latest
+    outputs:
+      has_client: ${{ steps.scan.outputs.has_client }}
+      has_server: ${{ steps.scan.outputs.has_server }}
+      has_python_tests: ${{ steps.scan.outputs.has_python_tests }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - id: scan
+        run: |
+          [ -f client/package.json ] && echo "has_client=true" >> "$GITHUB_OUTPUT" || echo "has_client=false" >> "$GITHUB_OUTPUT"
+          [ -f server/package.json ] && echo "has_server=true" >> "$GITHUB_OUTPUT" || echo "has_server=false" >> "$GITHUB_OUTPUT"
+          if find . -path '*/node_modules' -prune -o \( -name 'test_*.py' -o -name '*_test.py' \) -print | grep -q .; then
+            echo "has_python_tests=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_python_tests=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  build-and-test:
+    name: Build & Unit Tests (${{ matrix.target }})
+    needs: detect
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [client, server]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Skip if folder is missing
+        id: gate
+        run: |
+          if [ "${{ matrix.target }}" = "client" ] && [ "${{ needs.detect.outputs.has_client }}" != "true" ]; then echo "run=false" >> "$GITHUB_OUTPUT"
+          elif [ "${{ matrix.target }}" = "server" ] && [ "${{ needs.detect.outputs.has_server }}" != "true" ]; then echo "run=false" >> "$GITHUB_OUTPUT"
+          else echo "run=true" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ matrix.target }}/package-lock.json
+
+      - name: Install dependencies
+        if: steps.gate.outputs.run == 'true'
+        working-directory: ${{ matrix.target }}
+        run: npm ci || npm install
+
+      - name: Lint
+        if: steps.gate.outputs.run == 'true'
+        working-directory: ${{ matrix.target }}
+        run: npm run lint --if-present
+
+      - name: Unit tests with coverage
+        if: steps.gate.outputs.run == 'true'
+        working-directory: ${{ matrix.target }}
+        env:
+          CI: 'true'
+        run: npm test --if-present -- --coverage --passWithNoTests
+
+      - name: Build
+        if: steps.gate.outputs.run == 'true' && matrix.target == 'client'
+        working-directory: ${{ matrix.target }}
+        run: npm run build --if-present
+
+      - name: Upload coverage
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.target }}
+          path: ${{ matrix.target }}/coverage/lcov.info
+          if-no-files-found: ignore
+
+  pytest:
+    name: Pytest
+    needs: detect
+    if: needs.detect.outputs.has_python_tests == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          [ -f requirements.txt ] && pip install -r requirements.txt || true
+          pip install pytest pytest-cov
+      - name: Run pytest
+        run: pytest --cov=. --cov-report=xml:coverage.xml --junitxml=pytest-report.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pytest-results
+          path: |
+            coverage.xml
+            pytest-report.xml
+
+  sonarqube:
+    name: SonarQube Analysis
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-*
+          path: coverage-reports
+
+      - name: Place coverage files where Sonar expects them
+        run: |
+          [ -f coverage-reports/coverage-client/lcov.info ] && mkdir -p client/coverage && cp coverage-reports/coverage-client/lcov.info client/coverage/lcov.info || true
+          [ -f coverage-reports/coverage-server/lcov.info ] && mkdir -p server/coverage && cp coverage-reports/coverage-server/lcov.info server/coverage/lcov.info || true
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY || 'nbhanu220904_stackAI' }}
+            -Dsonar.projectName=stackAI
+            -Dsonar.sources=client/src,server
+            -Dsonar.exclusions=**/node_modules/**,**/build/**,**/dist/**,**/coverage/**,**/*.test.js,**/*.test.jsx
+            -Dsonar.tests=client/src,server
+            -Dsonar.test.inclusions=**/*.test.js,**/*.test.jsx,**/*.spec.js
+            -Dsonar.javascript.lcov.reportPaths=client/coverage/lcov.info,server/coverage/lcov.info
+            ${{ inputs.sonar_branch_analysis && format('-Dsonar.branch.name={0}', inputs.branch_label) || '' }}
+
+      - name: SonarQube Quality Gate
+        uses: SonarSource/sonarqube-quality-gate-action@v1
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+  checkmarx:
+    name: Checkmarx Security Scan
+    needs: detect
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Checkmarx One Scan
+        uses: checkmarx/ast-github-action@main
+        with:
+          project_name: stackAI
+          branch: ${{ inputs.branch_label }}
+          base_uri: ${{ secrets.CX_BASE_URI }}
+          cx_tenant: ${{ secrets.CX_TENANT }}
+          cx_client_id: ${{ secrets.CX_CLIENT_ID }}
+          cx_client_secret_eu: ${{ secrets.CX_CLIENT_SECRET }}
+          additional_params: >-
+            --scan-types sast,sca,iac-security
+            --report-format sarif
+            --output-name cx-results
+            --threshold "sast-high=1;sca-high=1"
+
+      - name: Upload SARIF to GitHub Security tab
+        if: always() && hashFiles('cx-results.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: cx-results.sarif

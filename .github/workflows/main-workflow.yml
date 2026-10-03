@@ -1,0 +1,74 @@
+name: MAIN Workflow (Promote UAT to MAIN)
+
+"on":
+  workflow_dispatch:           # triggered by uat-workflow after a successful UAT deploy (or manually)
+
+concurrency:
+  group: main-workflow
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  security-events: write
+
+jobs:
+  check:
+    name: Is there something to promote?
+    runs-on: ubuntu-latest
+    outputs:
+      should_promote: ${{ steps.c.outputs.should_promote }}
+      uat_sha: ${{ steps.c.outputs.uat_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: c
+        run: |
+          git fetch origin uat main
+          echo "uat_sha=$(git rev-parse origin/uat)" >> "$GITHUB_OUTPUT"
+          AHEAD=$(git rev-list --count origin/main..origin/uat)
+          if [ "$AHEAD" -gt 0 ]; then echo "should_promote=true" >> "$GITHUB_OUTPUT"; else echo "should_promote=false" >> "$GITHUB_OUTPUT"; fi
+
+  ci:
+    name: CI on UAT snapshot
+    needs: check
+    if: needs.check.outputs.should_promote == 'true'
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ needs.check.outputs.uat_sha }}
+      branch_label: main
+    secrets: inherit
+
+  promote:
+    name: Merge UAT into MAIN
+    needs: [check, ci]
+    runs-on: ubuntu-latest
+    environment: production      # add required reviewers on this environment for manual approval
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.PROMOTION_TOKEN || github.token }}
+      - name: Merge
+        run: |
+          git config user.name  "accel-cicd-bot"
+          git config user.email "accel-cicd-bot@users.noreply.github.com"
+          git fetch origin uat
+          SHA="${{ needs.check.outputs.uat_sha }}"
+          git merge --ff-only "$SHA" || git merge --no-edit -m "chore: promote uat to main ($SHA)" "$SHA"
+          git push origin main
+
+  deploy-prod:
+    name: Deploy to PRODUCTION
+    needs: promote
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Deploy
+        run: |
+          echo "Deploying PRODUCTION"
+          # TODO: real deploy step

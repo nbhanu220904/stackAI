@@ -1,0 +1,76 @@
+name: DEV Workflow (Changes from Feature Branches to DEV Branch)
+
+"on":
+  pull_request:            # feature branch -> dev PR: run checks only
+    branches:
+      - dev
+    paths-ignore:
+      - '.github/workflows/dev-workflow.yml'
+      - 'README.md'
+      - 'docs/**'
+  push:                    # PR merged into dev: run checks + deploy to DEV
+    branches:
+      - dev
+    paths-ignore:
+      - '.github/workflows/dev-workflow.yml'
+      - 'README.md'
+      - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Feature Branch Name'
+        required: true
+        default: 'feature/your-feature-branch'
+      environments:
+        description: 'Comma-separated list of environments to deploy to (e.g., dev, staging)'
+        required: true
+        type: string
+        default: 'dev'
+
+concurrency:
+  group: dev-workflow-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: read
+
+jobs:
+  ci:
+    name: CI (Tests, SonarQube, Checkmarx)
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || '' }}
+      branch_label: ${{ github.event_name == 'pull_request' && github.head_ref || (github.event_name == 'workflow_dispatch' && inputs.branch || github.ref_name) }}
+    secrets: inherit
+
+  prepare-deploy:
+    name: Resolve target environments
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+      - id: m
+        env:
+          ENVS: ${{ github.event_name == 'workflow_dispatch' && inputs.environments || 'dev' }}
+        run: |
+          echo "matrix=$(echo "$ENVS" | jq -R -c 'split(",") | map(gsub("\\s";"")) | map(select(length>0))')" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Deploy to ${{ matrix.environment }}
+    needs: [ci, prepare-deploy]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ${{ fromJSON(needs.prepare-deploy.outputs.matrix) }}
+    environment: ${{ matrix.environment }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || '' }}
+      - name: Deploy
+        run: |
+          echo "Deploying to ${{ matrix.environment }}"
+          # TODO: real deploy step, e.g. npx vercel deploy --token ${{ secrets.VERCEL_TOKEN }}
